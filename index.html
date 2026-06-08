@@ -562,6 +562,79 @@
     </div>
   </div>
 
+  <!-- POPUP MODAL: EDIT PRODUCT VIEW (Admin/Owner CRUD) -->
+  <div class="brutal-modal-backdrop" id="editProductModalBackdrop">
+    <div class="brutal-modal" style="width: 500px;">
+      <h2 style="font-weight: 800; font-size: 20px; margin-bottom: 16px; border-bottom: var(--border-width) solid var(--border-color); padding-bottom: 8px;">
+        Edit Master Produk
+      </h2>
+
+      <form id="editProductForm" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+        <input type="hidden" id="editProdId" />
+        <div style="display: flex; gap: 12px;">
+          <div style="flex: 1;">
+            <label for="editProdSku" style="font-weight: 700; font-size: 11px; display: block; margin-bottom: 4px;">SKU / KODE BARANG</label>
+            <input class="brutal-input font-mono" id="editProdSku" placeholder="Contoh: SMN-PAD-40KG" required="" type="text"/>
+          </div>
+          <div style="flex: 1; display: none;">
+            <label for="editProdCategory" style="font-weight: 700; font-size: 11px; display: block; margin-bottom: 4px;">KATEGORI</label>
+            <select class="brutal-select" id="editProdCategory">
+              <option value="Semen" selected>Semen</option>
+              <option value="Pasir">Pasir</option>
+              <option value="Cat">Cat</option>
+              <option value="Pelapis">Pelapis</option>
+              <option value="Alat Pertukangan">Alat Pertukangan</option>
+              <option value="Pipa">Pipa</option>
+              <option value="Ledeng">Ledeng</option>
+              <option value="Baja Ringan">Baja Ringan</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label for="editProdName" style="font-weight: 700; font-size: 11px; display: block; margin-bottom: 4px;">NAMA PRODUK</label>
+          <input class="brutal-input" id="editProdName" placeholder="Contoh: Semen Padang 40kg" required="" type="text"/>
+        </div>
+
+        <div style="display: flex; gap: 12px;">
+          <div style="flex: 1;">
+            <label for="editProdBaseUnit" style="font-weight: 700; font-size: 11px; display: block; margin-bottom: 4px;">SATUAN UTAMA</label>
+            <select class="brutal-select" id="editProdBaseUnit" required>
+              <option value="kg">kg</option>
+              <option value="sak">sak</option>
+              <option value="ret">ret</option>
+              <option value="pcs">pcs</option>
+            </select>
+          </div>
+          <div style="flex: 1;">
+            <label for="editProdStock" style="font-weight: 700; font-size: 11px; display: block; margin-bottom: 4px;">STOK SEKARANG</label>
+            <input class="brutal-input font-mono" id="editProdStock" placeholder="0" required="" type="number"/>
+          </div>
+          <div style="flex: 1;">
+            <label for="editProdMinStock" style="font-weight: 700; font-size: 11px; display: block; margin-bottom: 4px;">MIN STOK ALERT</label>
+            <input class="brutal-input font-mono" id="editProdMinStock" placeholder="10" required="" type="number"/>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 12px;">
+          <div style="flex: 1;">
+            <label for="editProdPurchasePrice" style="font-weight: 700; font-size: 11px; display: block; margin-bottom: 4px;">HARGA BELI BASE (HPP / Rp)</label>
+            <input class="brutal-input font-mono" id="editProdPurchasePrice" placeholder="HPP per Kg/Pcs" required="" type="number"/>
+          </div>
+          <div style="flex: 1;">
+            <label for="editProdSellingPrice" style="font-weight: 700; font-size: 11px; display: block; margin-bottom: 4px;">HARGA JUAL BASE (Rp)</label>
+            <input class="brutal-input font-mono" id="editProdSellingPrice" placeholder="Jual per Kg/Pcs" required="" type="number"/>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 8px;">
+          <button class="brutal-btn" id="closeEditProductModalBtn" type="button">Batal</button>
+          <button class="brutal-btn primary-btn" type="submit">Simpan Perubahan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- POPUP MODAL: VOID REQUEST MODAL (Kasir Triggered) -->
   <div class="brutal-modal-backdrop" id="voidRequestModalBackdrop">
     <div class="brutal-modal" style="width: 440px;">

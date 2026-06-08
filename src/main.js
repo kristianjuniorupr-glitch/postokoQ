@@ -132,6 +132,18 @@ const confirmPaymentBtn = document.getElementById('confirmPaymentBtn');
 const addProductModalBackdrop = document.getElementById('addProductModalBackdrop');
 const addProductForm = document.getElementById('addProductForm');
 
+const editProductModalBackdrop = document.getElementById('editProductModalBackdrop');
+const editProductForm = document.getElementById('editProductForm');
+const editProdId = document.getElementById('editProdId');
+const editProdSku = document.getElementById('editProdSku');
+const editProdName = document.getElementById('editProdName');
+const editProdCategory = document.getElementById('editProdCategory');
+const editProdBaseUnit = document.getElementById('editProdBaseUnit');
+const editProdStock = document.getElementById('editProdStock');
+const editProdMinStock = document.getElementById('editProdMinStock');
+const editProdPurchasePrice = document.getElementById('editProdPurchasePrice');
+const editProdSellingPrice = document.getElementById('editProdSellingPrice');
+
 const voidRequestModalBackdrop = document.getElementById('voidRequestModalBackdrop');
 const voidRequestItemDetails = document.getElementById('voidRequestItemDetails');
 const voidReasonInput = document.getElementById('voidReasonInput');
@@ -551,7 +563,10 @@ function renderInventoryTable() {
         <div class="font-mono" style="font-weight: 700;">Jual: Rp ${p.selling_price_base.toLocaleString('id-ID')}</div>
       </td>
       <td style="text-align: center;">
-        <button class="brutal-btn error-btn" style="padding: 4px 8px; font-size: 10px;" onclick="window.deleteProduct('${p.id}')">Hapus</button>
+        <div style="display: flex; gap: 6px; justify-content: center;">
+          <button class="brutal-btn" style="padding: 4px 8px; font-size: 10px;" onclick="window.openEditProductModal('${p.id}')">Edit</button>
+          <button class="brutal-btn error-btn" style="padding: 4px 8px; font-size: 10px;" onclick="window.deleteProduct('${p.id}')">Hapus</button>
+        </div>
       </td>
     `;
     tbody.appendChild(tr);
@@ -1305,6 +1320,13 @@ if (closeAddProductModalBtn) {
   });
 }
 
+const closeEditProductModalBtn = document.getElementById('closeEditProductModalBtn');
+if (closeEditProductModalBtn) {
+  closeEditProductModalBtn.addEventListener('click', () => {
+    editProductModalBackdrop.classList.remove('show');
+  });
+}
+
 addProductForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   
@@ -1403,6 +1425,162 @@ window.deleteProduct = async function(id) {
     console.error(err);
   }
 };
+
+window.openEditProductModal = function(id) {
+  const prod = products.find(p => p.id === id);
+  if (!prod) {
+    showToast('Produk tidak ditemukan!', 'error');
+    return;
+  }
+  
+  editProdId.value = prod.id;
+  editProdSku.value = prod.sku;
+  editProdName.value = prod.name;
+  editProdCategory.value = prod.category || 'Semen';
+  editProdBaseUnit.value = prod.base_unit;
+  editProdStock.value = prod.stock_base;
+  editProdMinStock.value = prod.min_stock_base;
+  editProdPurchasePrice.value = prod.purchase_price_base;
+  editProdSellingPrice.value = prod.selling_price_base;
+  
+  editProductModalBackdrop.classList.add('show');
+};
+
+editProductForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const id = editProdId.value;
+  const sku = editProdSku.value.trim();
+  const name = editProdName.value.trim();
+  const category = editProdCategory.value;
+  const baseUnit = editProdBaseUnit.value.toLowerCase();
+  const stock = Number(editProdStock.value);
+  const minStock = Number(editProdMinStock.value);
+  const purchase = Number(editProdPurchasePrice.value);
+  const selling = Number(editProdSellingPrice.value);
+
+  try {
+    if (useLocalFallback) {
+      const localProds = JSON.parse(localStorage.getItem('materiq_products')) || [];
+      
+      // Check if SKU is used by another product
+      const dup = localProds.find(p => p.sku === sku && p.id !== id);
+      if (dup) {
+        showToast('SKU sudah digunakan oleh produk lain!', 'error');
+        return;
+      }
+
+      const prodIndex = localProds.findIndex(p => p.id === id);
+      if (prodIndex === -1) {
+        showToast('Produk tidak ditemukan di database lokal!', 'error');
+        return;
+      }
+
+      // Update product
+      localProds[prodIndex] = {
+        ...localProds[prodIndex],
+        sku, name, category, base_unit: baseUnit,
+        purchase_price_base: purchase, selling_price_base: selling,
+        stock_base: stock, min_stock_base: minStock
+      };
+      localStorage.setItem('materiq_products', JSON.stringify(localProds));
+
+      // Update conversion where multiplier = 1 (or add if it doesn't exist)
+      const localConvs = JSON.parse(localStorage.getItem('materiq_conversions')) || [];
+      const convIndex = localConvs.findIndex(c => c.product_id === id && c.multiplier === 1);
+      if (convIndex !== -1) {
+        localConvs[convIndex].unit_name = baseUnit.toUpperCase();
+        localConvs[convIndex].selling_price = selling;
+      } else {
+        localConvs.push({
+          id: 'c-' + Math.random().toString(36).substr(2, 9),
+          product_id: id,
+          unit_name: baseUnit.toUpperCase(),
+          multiplier: 1,
+          selling_price: selling
+        });
+      }
+      localStorage.setItem('materiq_conversions', JSON.stringify(localConvs));
+
+      showToast('Perubahan produk berhasil disimpan!', 'success');
+      writeAuditLog('Product Updated', `Updated product ${name} (SKU: ${sku})`);
+      
+      editProductForm.reset();
+      editProductModalBackdrop.classList.remove('show');
+      await loadProducts();
+      await loadConversions();
+
+    } else {
+      // Check duplicate SKU in Supabase
+      const { data: dupProds, error: dupErr } = await supabase
+        .from('products')
+        .select('id')
+        .eq('sku', sku)
+        .neq('id', id);
+      
+      if (dupErr) throw dupErr;
+      if (dupProds && dupProds.length > 0) {
+        showToast('SKU sudah digunakan oleh produk lain!', 'error');
+        return;
+      }
+
+      // Update product in Supabase
+      const { error: prodErr } = await supabase
+        .from('products')
+        .update({
+          sku, name, category, base_unit: baseUnit,
+          purchase_price_base: purchase, selling_price_base: selling,
+          stock_base: stock, min_stock_base: minStock
+        })
+        .eq('id', id);
+
+      if (prodErr) throw prodErr;
+
+      // Update conversion in Supabase where multiplier = 1
+      const { data: existingConvs, error: checkConvErr } = await supabase
+        .from('units_conversion')
+        .select('id')
+        .eq('product_id', id)
+        .eq('multiplier', 1);
+
+      if (checkConvErr) throw checkConvErr;
+
+      if (existingConvs && existingConvs.length > 0) {
+        const { error: convErr } = await supabase
+          .from('units_conversion')
+          .update({
+            unit_name: baseUnit.toUpperCase(),
+            selling_price: selling
+          })
+          .eq('id', existingConvs[0].id);
+        if (convErr) throw convErr;
+      } else {
+        const { error: convErr } = await supabase
+          .from('units_conversion')
+          .insert([
+            {
+              product_id: id,
+              unit_name: baseUnit.toUpperCase(),
+              multiplier: 1,
+              selling_price: selling
+            }
+          ]);
+        if (convErr) throw convErr;
+      }
+
+      showToast('Perubahan produk berhasil disimpan ke Supabase!', 'success');
+      writeAuditLog('Product Updated', `Updated master product ${name} (SKU: ${sku})`);
+      
+      editProductForm.reset();
+      editProductModalBackdrop.classList.remove('show');
+      await loadProducts();
+      await loadConversions();
+    }
+  } catch (err) {
+    showToast('Gagal mengubah produk', 'error');
+    console.error(err);
+  }
+});
 
 // 11. Owner Dashboard Calculations & Restock Planner
 async function loadDashboardStats() {
