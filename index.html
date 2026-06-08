@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>TokoQ - POS Toko Bangunan (Classic-Modern Edition)</title>
+  <!-- Material Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+  <!-- Custom CSS -->
+  <link href="/src/index.css" rel="stylesheet"/>
+</head>
+<body class="bg-surface text-on-surface">
+
+  <!-- Toast Notification System -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- AUTHENTICATION LAYER (LOGIN SCREEN) -->
+  <div class="brutal-modal-backdrop show" id="loginBackdrop" style="opacity: 1; pointer-events: auto;">
+    <div class="brutal-modal" style="width: 400px;">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <h1 style="font-size: 28px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 8px;">TokoQ</h1>
+        <p style="color: var(--text-muted);">POS Toko Bangunan &bull; Classic-Modern Edition</p>
+      </div>
+      
+      <form id="loginForm" autocomplete="off" style="display: flex; flex-direction: column; gap: 14px;">
+        <div>
+          <label for="loginUsername" style="font-weight: 700; font-size: 11px; display: block; margin-bottom: 4px; text-transform: uppercase;">Username</label>
+          <input class="brutal-input" id="loginUsername" autocomplete="off" required type="text"/>
+        </div>
+        <div>
+          <label for="loginPassword" style="font-weight: 700; font-size: 11px; display: block; margin-bottom: 4px; text-transform: uppercase;">Password</label>
+          <input class="brutal-input" id="loginPassword" autocomplete="new-password" required type="password"/>
+        </div>
+        <button class="brutal-btn primary-btn" type="submit" style="width: 100%; height: 44px; font-size: 14px; margin-top: 8px;">
+          <span class="material-symbols-outlined">login</span> Masuk Sistem
+        </button>
+      </form>
+      
+      <div style="border-top: var(--border-width) solid var(--border-color); margin-top: 20px; padding-top: 12px; text-align: center;">
+        <span style="font-size: 11px; font-family: var(--font-mono); color: var(--text-muted);">TokoQ POS v1.0.0 (MVP)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- APPLICATION CORE WINDOW -->
+  <div class="hidden" id="appRoot">
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar">
+      <div class="sidebar-brand">
+        <h2>TokoQ</h2>
+        <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px;">Classic-Modern Blend</span>
+      </div>
+
+
+      <ul class="sidebar-nav">
+        <li>
+          <a class="nav-item active" href="#" id="navSales">
+            <span class="material-symbols-outlined">point_of_sale</span>
+            <span>Kasir POS</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-item" href="#" id="navInventory">
+            <span class="material-symbols-outlined">inventory_2</span>
+            <span>Inventaris Gudang</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-item" href="#" id="navReports">
+            <span class="material-symbols-outlined">analytics</span>
+            <span>Laporan Keuangan</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-item" href="#" id="navSettings">
+            <span class="material-symbols-outlined">settings</span>
+            <span>Pengaturan</span>
+          </a>
+        </li>
+      </ul>
+
+      <div style="margin-top: auto; padding-top: 16px; border-top: var(--border-width) solid var(--border-color);">
+        <!-- Active User Profile Box -->
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+          <div style="width: 36px; height: 36px; border-radius: var(--radius-full); border: var(--border-width) solid var(--border-color); background-color: var(--surface-medium); display: flex; align-items: center; justify-content: center; font-weight: 800;" id="userAvatarChar">
+            A
+          </div>
+          <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
+            <p style="font-weight: 700; font-size: 13px;" id="userNameLabel">Admin Kasir</p>
+            <p style="font-family: var(--font-mono); font-size: 10px; color: var(--text-muted);" id="userRoleLabel">Role: Admin</p>
+          </div>
+        </div>
+
+        <button class="brutal-btn" style="width: 100%; justify-content: center; padding: 6px 12px; font-size: 12px;" id="logoutBtn">
+          <span class="material-symbols-outlined" style="font-size: 16px;">logout</span>
+          Keluar Sesi
+        </button>
+      </div>
+    </nav>
+
+    <div class="app-container">
+      <!-- Top App Bar -->
+      <header class="top-bar">
+        <div style="display: flex; align-items: center; gap: 16px; flex: 1;">
+          <h2 style="font-weight: 800; font-size: 18px; letter-spacing: -0.01em;" id="viewTitle">Kasir POS</h2>
+          
+          <!-- Global SKU Search Input (Only active in Sales mode) -->
+          <div class="hidden" id="globalSearchContainer" style="position: relative; width: 340px;">
+            <span class="material-symbols-outlined" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 18px;">search</span>
+            <input class="brutal-input" id="globalSearchInput" placeholder="Cari Produk atau Barcode..." style="padding-left: 36px; height: 38px; font-size: 13px;" type="text"/>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <!-- Theme Switcher -->
+          <button class="brutal-btn" id="themeToggleBtn" style="padding: 6px 10px;" title="Ganti Tema">
+            <span class="material-symbols-outlined" style="font-size: 18px;">dark_mode</span>
+          </button>
+          
+          <div class="kbd-shortcut" style="font-size: 10px; background-color: var(--success-bg); color: var(--success-text); border-color: var(--success);">
+            Sistem Aktif (Mouse Mode)
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Contents Router -->
+      <main class="main-content">
+        
+        <!-- SECTION 1: KASIR POS -->
+        <div class="pos-container" id="sectionSales">
+          <!-- Left Catalog Area -->
+          <div class="pos-catalog">
+            <!-- Filter Categories Row -->
+            <div class="hidden" style="display: none; gap: 8px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 12px;" id="categoryFilterRow">
+              <button class="brutal-btn primary-btn" data-category="all" style="padding: 6px 12px; font-size: 12px;">Semua Kategori</button>
+              <button class="brutal-btn" data-category="Semen" style="padding: 6px 12px; font-size: 12px;">Semen</button>
+              <button class="brutal-btn" data-category="Pasir" style="padding: 6px 12px; font-size: 12px;">Pasir</button>
+              <button class="brutal-btn" data-category="Cat" style="padding: 6px 12px; font-size: 12px;">Cat</button>
+              <button class="brutal-btn" data-category="Pelapis" style="padding: 6px 12px; font-size: 12px;">Pelapis</button>
+              <button class="brutal-btn" data-category="Alat Pertukangan" style="padding: 6px 12px; font-size: 12px;">Alat Pertukangan</button>
+              <button class="brutal-btn" data-category="Pipa" style="padding: 6px 12px; font-size: 12px;">Pipa</button>
+              <button class="brutal-btn" data-category="Ledeng" style="padding: 6px 12px; font-size: 12px;">Ledeng</button>
+              <button class="brutal-btn" data-category="Baja Ringan" style="padding: 6px 12px; font-size: 12px;">Baja Ringan</button>
+            </div>
+
+            <!-- Product Grid -->
+            <div class="catalog-grid" id="productGrid">
+              <!-- Loading/Placeholder -->
+              <div style="grid-column: span 12; text-align: center; padding: 64px 0;">
+                <p>Memuat produk dari Supabase...</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Shopping Cart Area -->
+          <div class="pos-cart">
+            <div style="padding: 16px; border-bottom: var(--border-width) solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background-color: var(--surface-low);">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="material-symbols-outlined" style="font-weight: bold; color: var(--secondary-bg);">shopping_cart</span>
+                <h3 style="font-weight: 800; font-size: 16px;">Keranjang</h3>
+              </div>
+              <button class="brutal-btn" id="emptyCartBtn" style="padding: 4px 8px; font-size: 11px;">
+                <span class="material-symbols-outlined" style="font-size: 14px;">delete_sweep</span> Kosongkan
+              </button>
+            </div>
+
+            <!-- Zebra Table Cart Rows -->
+            <div style="flex: 1; overflow-y: auto;" id="cartRowsContainer">
+              <div style="text-align: center; padding: 40px 16px; color: var(--text-muted);">
+                <span class="material-symbols-outlined" style="font-size: 40px; margin-bottom: 8px; display: block;">add_shopping_cart</span>
+                Keranjang masih kosong.<br>Pilih produk atau ketik pencarian.
+              </div>
+            </div>
+
+            <!-- Cart Summary Bottom Box -->
+            <div style="padding: 6px 12px; border-top: var(--border-width) solid var(--border-color); background-color: var(--surface-low); display: flex; flex-direction: column; gap: 4px;">
+              
+              <!-- Pending Queue Save -->
+              <div style="display: flex; gap: 6px; margin-bottom: 2px;">
+                <button class="brutal-btn" id="savePendingBtn" style="flex: 1; padding: 3px; font-size: 11px; height: 26px;" title="Simpan Keranjang Sementara">
+                  <span class="material-symbols-outlined" style="font-size: 14px;">pause_circle</span> Simpan Pending
+                </button>
+                <button class="brutal-btn" id="loadPendingBtn" style="flex: 1; padding: 3px; font-size: 11px; height: 26px;">
+                  <span class="material-symbols-outlined" style="font-size: 14px;">play_circle</span> Buka Pending (<span id="pendingCount">0</span>)
+                </button>
+              </div>
+
+              <!-- Price Calculations -->
+              <div style="display: flex; justify-content: space-between; font-size: 12px; line-height: 1.2;">
+                <span>Subtotal</span>
+                <span class="font-mono font-bold" id="cartSubtotal">Rp 0</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 12px; line-height: 1.2;">
+                <span>Pajak (PPN 11%)</span>
+                <span class="font-mono font-bold" id="cartTax">Rp 0</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--secondary-bg); font-weight: 700; align-items: center; line-height: 1.2;">
+                <span>Diskon</span>
+                <input class="brutal-input" id="cartDiscountInput" placeholder="0" style="width: 70px; height: 20px; padding: 0px 6px; font-size: 10px; text-align: right; font-family: var(--font-mono);" type="number"/>
+              </div>
+              <div style="border-top: 1px dashed var(--border-color); padding-top: 4px; display: flex; justify-content: space-between; align-items: center; margin-top: 2px;">
+                <span style="font-weight: 700; font-size: 13px;">Total Tagihan</span>
+                <span class="font-mono" id="cartTotal" style="font-size: 18px; font-weight: 800;">Rp 0</span>
+              </div>
+
+              <!-- Pay Now Button -->
+              <button class="brutal-btn secondary-btn" id="checkoutBtn" style="width: 100%; height: 34px; font-size: 13px; margin-top: 2px;" title="Buka Pembayaran">
+                <span class="material-symbols-outlined" style="font-size: 16px;">payments</span>
+                BAYAR SEKARANG
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 2: INVENTARIS GUDANG -->
+        <div class="hidden" id="sectionInventory">
+          <!-- Page Header Controls -->
+          <div class="bento-card" style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; gap: 12px; align-items: center;">
+              <span class="brutal-badge warning-badge" id="lowStockWarningBadge">0 Stok Kritis</span>
+              <button class="brutal-btn" id="toggleCriticalStockBtn" style="padding: 6px 12px; font-size: 12px;">
+                Tampilkan Hanya Stok Kritis
+              </button>
+              <div style="position: relative; width: 250px;">
+                <span class="material-symbols-outlined" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 16px;">search</span>
+                <input class="brutal-input" id="inventorySearchInput" placeholder="Cari SKU atau Nama..." style="padding-left: 32px; height: 32px; font-size: 12px;" type="text"/>
+              </div>
+            </div>
+            
+            <button class="brutal-btn primary-btn" id="openAddProductModalBtn" style="padding: 6px 12px; font-size: 12px;">
+              <span class="material-symbols-outlined" style="font-size: 16px;">add</span> Tambah Produk
+            </button>
+          </div>
+
+          <!-- Inventory Table Bento Card -->
+          <div class="bento-card" style="padding: 0; overflow: hidden;">
+            <div style="overflow-x: auto;">
+              <table class="brutal-table" id="inventoryTable">
+                <thead>
+                  <tr>
+                    <th>SKU / Kode</th>
+                    <th>Nama Produk</th>
+                    <th>Kategori</th>
+                    <th>Stok Base</th>
+                    <th>Batas Minimum</th>
+                    <th>Harga Base (HPP / Jual)</th>
+                    <th style="text-align: center;">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="inventoryTableBody">
+                  <tr>
+                    <td colspan="7" style="text-align: center; padding: 32px;">Memuat data inventaris...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 3: LAPORAN KEUANGAN (OWNER DASHBOARD) -->
+        <div class="hidden" id="sectionReports">
+          <!-- Bento Summary Tiles Row -->
+          <div class="bento-grid" style="margin-bottom: 20px;">
+            
+            <!-- Tile 1: Total Omzet -->
+            <div class="bento-card" style="grid-column: span 4;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                <span style="font-weight: 600; color: var(--text-muted);">Total Omzet (Penjualan)</span>
+                <span class="material-symbols-outlined" style="color: var(--secondary-bg);">payments</span>
+              </div>
+              <h1 class="font-mono" id="dashboardOmzet" style="font-size: 24px; font-weight: 800; margin-bottom: 4px;">Rp 0</h1>
+              <span style="font-size: 11px; color: var(--text-muted);">Akumulasi seluruh transaksi lunas</span>
+            </div>
+
+            <!-- Tile 2: Total Laba Bersih -->
+            <div class="bento-card" style="grid-column: span 4;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                <span style="font-weight: 600; color: var(--text-muted);">Laba Bersih (Real-time)</span>
+                <span class="material-symbols-outlined" style="color: var(--success);">trending_up</span>
+              </div>
+              <h1 class="font-mono" id="dashboardLaba" style="font-size: 24px; font-weight: 800; margin-bottom: 4px;">Rp 0</h1>
+              <span style="font-size: 11px; color: var(--text-muted);">Omzet - HPP (Harga Pokok Penjualan)</span>
+            </div>
+
+            <!-- Tile 3: Total Transaksi -->
+            <div class="bento-card" style="grid-column: span 4;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                <span style="font-weight: 600; color: var(--text-muted);">Transaksi Selesai</span>
+                <span class="material-symbols-outlined">receipt_long</span>
+              </div>
+              <h1 class="font-mono" id="dashboardTrxCount" style="font-size: 24px; font-weight: 800; margin-bottom: 4px;">0</h1>
+              <span style="font-size: 11px; color: var(--text-muted);" id="dashboardTrxAvg">Rata-rata: Rp 0 / Trx</span>
+            </div>
+
+          </div>
+
+          <!-- Bottom Bento Grid Panels -->
+          <div class="bento-grid">
+            <!-- Left Panel: Smart Restock Planner -->
+            <div class="bento-card" style="grid-column: span 6; display: flex; flex-direction: column;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="material-symbols-outlined" style="color: var(--warning);">warning</span>
+                  <h3 style="font-weight: 800; font-size: 16px;">Predictive Restock Planner</h3>
+                </div>
+                <span style="font-size: 11px; color: var(--text-muted);">Prediksi Stok Kritis 3 Hari Kedepan</span>
+              </div>
+
+              <!-- Recommendation Rows -->
+              <div style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;" id="restockPlannerContainer">
+                <div style="text-align: center; padding: 32px; color: var(--text-muted);">
+                  Seluruh stok barang aman. Tidak ada saran restock saat ini.
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Panel: Audit Activity Trail & Remote Void Approval -->
+            <div class="bento-card" style="grid-column: span 6; display: flex; flex-direction: column;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="material-symbols-outlined" style="color: var(--secondary-bg);">security</span>
+                  <h3 style="font-weight: 800; font-size: 16px;">Otorisasi Void & Audit Log</h3>
+                </div>
+              </div>
+
+              <!-- Active Void Request Box -->
+              <div id="voidApprovalArea" style="margin-bottom: 16px;">
+                <div style="padding: 12px; background-color: var(--surface-low); border: var(--border-width) dashed var(--border-color); border-radius: var(--radius-md); text-align: center; color: var(--text-muted); font-size: 12px;">
+                  Tidak ada pengajuan void aktif dari kasir.
+                </div>
+              </div>
+
+              <!-- General Audit Log Feed -->
+              <div style="flex: 1; border-top: 1px solid var(--border-color); padding-top: 12px; overflow-y: auto; max-height: 250px;">
+                <h4 style="font-size: 12px; font-weight: 800; text-transform: uppercase; margin-bottom: 8px; color: var(--text-muted);">Audit Log Kasir</h4>
+                <div style="display: flex; flex-direction: column; gap: 8px;" id="auditLogContainer">
+                  <div style="font-size: 12px; color: var(--text-muted);">Memuat audit logs...</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 4: PENGATURAN KREDENSIAL (OWNER ACCESS) -->
+        <div class="hidden" id="sectionSettings">
+          <div class="bento-grid" style="max-width: 800px; margin: 0 auto;">
+            
+            <!-- Admin Creds Card -->
+            <div class="bento-card" style="grid-column: span 6;">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 18px; border-bottom: var(--border-width) solid var(--border-color); padding-bottom: 8px;">
+                <span class="material-symbols-outlined" style="color: var(--secondary-bg); font-weight: bold;">manage_accounts</span>
+                <h3 style="font-weight: 800; font-size: 16px;">Akses Admin</h3>
+              </div>
+              <form id="settingsAdminForm" style="display: flex; flex-direction: column; gap: 12px;">
+                <div>
+                  <label for="settingsAdminUsername" style="font-weight: 700; font-size: 11px; display: block; margin-bottom: 4px; text-transform: uppercase;">Username Admin Baru</label>
+                  <input class="brutal-input" id="settingsAdminUsername" required type="text"/>
+                </div>
+                <div>
+                  <label for="settingsAdminPassword" style="font-weight: 700; font-size: 11px; display: block; margin-bottom: 4px; text-transform: uppercase;">Password Admin Baru</label>
+                  <input class="brutal-input" id="settingsAdminPassword" required type="password"/>
+                </div>
+                <button class="brutal-btn primary-btn" type="submit" style="margin-top: 8px; width: 100%;">
+                  <span class="material-symbols-outlined">save</span> Simpan Perubahan Admin
+                </button>
+              </form>
+            </div>
+
+            <!-- Owner Creds Card -->
+            <div class="bento-card" style="grid-column: span 6;">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 18px; border-bottom: var(--border-width) solid var(--border-color); padding-bottom: 8px;">
+                <span class="material-symbols-outlined" style="color: var(--success-text); font-weight: bold;">admin_panel_settings</span>
+                <h3 style="font-weight: 800; font-size: 16px;">Akses Owner</h3>
+              </div>
+              <form id="settingsOwnerForm" style="display: flex; flex-direction: column; gap: 12px;">
+                <div>
+                  <label for="settingsOwnerUsername" style="font-weight: 700; font-size: 11px; display: block; margin-bottom: 4px; text-transform: uppercase;">Username Owner Baru</label>
+                  <input class="brutal-input" id="settingsOwnerUsername" required type="text"/>
+                </div>
+                <div>
+                  <label for="settingsOwnerPassword" style="font-weight: 700; font-size: 11px; display: block; margin-bottom: 4px; text-transform: uppercase;">Password Owner Baru</label>
+                  <input class="brutal-input" id="settingsOwnerPassword" required type="password"/>
+                </div>
+                <button class="brutal-btn success-btn" type="submit" style="margin-top: 8px; width: 100%;">
+                  <span class="material-symbols-outlined">save</span> Simpan Perubahan Owner
+                </button>
+              </form>
+            </div>
+
+            <!-- Bank CRUD Card (Owner Only) -->
+            <div class="bento-card" style="grid-column: span 12; margin-top: 16px;">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 18px; border-bottom: var(--border-width) solid var(--border-color); padding-bottom: 8px;">
+                <span class="material-symbols-outlined" style="color: var(--secondary-bg); font-weight: bold;">account_balance</span>
+                <h3 style="font-weight: 800; font-size: 16px;">Pengaturan Bank / Rekening Transfer</h3>
+              </div>
+              
+              <!-- Form to Add Bank -->
+              <form id="addBankForm" style="display: flex; gap: 12px; align-items: flex-end; margin-bottom: 16px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 150px;">
+                  <label for="bankNameInput" style="font-weight: 700; font-size: 11px; display: block; margin-bottom: 4px; text-transform: uppercase;">Nama Bank / E-Wallet</label>
+                  <input class="brutal-input" id="bankNameInput" placeholder="Contoh: BCA, BRI, DANA" required type="text"/>
+                </div>
+                <div style="flex: 2; min-width: 250px;">
+                  <label for="bankDetailsInput" style="font-weight: 700; font-size: 11px; display: block; margin-bottom: 4px; text-transform: uppercase;">Nomor Rekening / Keterangan</label>
+                  <input class="brutal-input" id="bankDetailsInput" placeholder="Contoh: Rek. 123456789 a/n TokoQ" required type="text"/>
+                </div>
+                <button class="brutal-btn primary-btn" type="submit" style="height: 44px; padding: 0 16px;">
+                  <span class="material-symbols-outlined">add</span> Tambah Bank
+                </button>
+              </form>
+
+              <!-- Table of Banks -->
+              <div style="overflow-x: auto; border: var(--border-width) solid var(--border-color); border-radius: var(--radius-sm);">
+                <table class="brutal-table">
+                  <thead>
+                    <tr>
+                      <th>Nama Bank / E-Wallet</th>
+                      <th>Detail Rekening</th>
+                      <th style="text-align: center; width: 100px;">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="settingsBankTableBody">
+                    <!-- Loaded dynamically -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- POPUP MODAL: PAYMENT VIEW (F3) -->
+  <div class="brutal-modal-backdrop" id="paymentModalBackdrop">
+    <div class="brutal-modal" style="width: 480px;">
+      <h2 style="font-weight: 800; font-size: 20px; letter-spacing: -0.01em; margin-bottom: 16px; border-bottom: var(--border-width) solid var(--border-color); padding-bottom: 8px; display: flex; justify-content: space-between;">
+        <span>Pembayaran Kasir</span>
+      </h2>
+
+      <!-- Total Price Alert -->
+      <div class="bento-card" style="background-color: var(--surface-low); text-align: center; margin-bottom: 16px;">
+        <p style="font-size: 13px; color: var(--text-muted);">Total Tagihan</p>
+        <h1 class="font-mono" id="modalTotalBill" style="font-size: 32px; font-weight: 800; color: var(--secondary-bg);">Rp 0</h1>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px;">
+        <!-- Payment Method -->
+        <div>
+          <label style="font-weight: 700; font-size: 12px; text-transform: uppercase; display: block; margin-bottom: 6px;">Metode Pembayaran</label>
+          <div style="display: flex; gap: 8px;">
+            <button class="brutal-btn primary-btn" id="payMethodCash" style="flex: 1; justify-content: center; font-size: 12px;">TUNAI</button>
+            <button class="brutal-btn" id="payMethodQris" style="flex: 1; justify-content: center; font-size: 12px;">QRIS</button>
+            <button class="brutal-btn" id="payMethodDebit" style="flex: 1; justify-content: center; font-size: 12px;">DEBIT / TRANSFER</button>
+          </div>
+        </div>
+
+        <!-- Bank / Transfer Destination Selection -->
+        <div id="transferBankGroup" class="hidden" style="display: none; margin-top: 10px;">
+          <label for="paymentBankSelect" style="font-weight: 700; font-size: 11px; text-transform: uppercase; display: block; margin-bottom: 6px;">Pilih Bank / E-Wallet Tujuan</label>
+          <select class="brutal-select" id="paymentBankSelect" style="font-size: 12px; padding: 6px 10px;">
+            <!-- Loaded dynamically -->
+          </select>
+        </div>
+
+        <!-- Cash Amount Received -->
+        <div id="cashReceivedInputGroup">
+          <label for="cashReceivedInput" style="font-weight: 700; font-size: 12px; text-transform: uppercase; display: block; margin-bottom: 6px;">Jumlah Uang Diterima (Rp)</label>
+          <input class="brutal-input font-mono" id="cashReceivedInput" placeholder="Contoh: 100000" style="font-size: 18px; font-weight: 700;" type="number"/>
+        </div>
+
+        <!-- Change Output -->
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background-color: var(--surface-low); border: var(--border-width) solid var(--border-color); border-radius: var(--radius-md);">
+          <span style="font-weight: 700;">Kembalian</span>
+          <span class="font-mono" id="cashChangeLabel" style="font-size: 20px; font-weight: 800; color: var(--success-text);">Rp 0</span>
+        </div>
+
+        <!-- Debt Blocker Info -->
+        <p id="debtWarningText" style="font-size: 12px; color: var(--error); font-weight: 700; display: none; text-align: center;">
+          [BLOCKED] Jumlah pembayaran kurang! Sistem tidak mengizinkan piutang/bon.
+        </p>
+      </div>
+
+      <div style="display: flex; gap: 12px; justify-content: flex-end;">
+        <button class="brutal-btn" id="cancelPaymentBtn">Batal</button>
+        <button class="brutal-btn success-btn" id="confirmPaymentBtn" disabled="">Cetak Struk & Selesaikan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- POPUP MODAL: ADD PRODUCT VIEW (Owner CRUD) -->
+  <div class="brutal-modal-backdrop" id="addProductModalBackdrop">
+    <div class="brutal-modal" style="width: 500px;">
+      <h2 style="font-weight: 800; font-size: 20px; margin-bottom: 16px; border-bottom: var(--border-width) solid var(--border-color); padding-bottom: 8px;">
+        Tambah Master Produk Baru
+      </h2>
+
+      <form id="addProductForm" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+        <div style="display: flex; gap: 12px;">
+          <div style="flex: 1;">
+            <label for="prodSku" style="font-weight: 700; font-size: 11px; display: block; margin-bottom: 4px;">SKU / KODE BARANG</label>
+            <input class="brutal-input font-mono" id="prodSku" placeholder="Contoh: SMN-PAD-40KG" required="" type="text"/>
+          </div>
+          <div style="flex: 1; display: none;">
+            <label for="prodCategory" style="font-weight: 700; font-size: 11px; display: block; margin-bottom: 4px;">KATEGORI</label>
+            <select class="brutal-select" id="prodCategory">
+              <option value="Semen" selected>Semen</option>
+              <option value="Pasir">Pasir</option>
+              <option value="Cat">Cat</option>
+              <option value="Pelapis">Pelapis</option>
+              <option value="Alat Pertukangan">Alat Pertukangan</option>
+              <option value="Pipa">Pipa</option>
+              <option value="Ledeng">Ledeng</option>
+              <option value="Baja Ringan">Baja Ringan</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label for="prodName" style="font-weight: 700; font-size: 11px; display: block; margin-bottom: 4px;">NAMA PRODUK</label>
+          <input class="brutal-input" id="prodName" placeholder="Contoh: Semen Padang 40kg" required="" type="text"/>
+        </div>
+
+        <div style="display: flex; gap: 12px;">
+          <div style="flex: 1;">
+            <label for="prodBaseUnit" style="font-weight: 700; font-size: 11px; display: block; margin-bottom: 4px;">SATUAN UTAMA</label>
+            <select class="brutal-select" id="prodBaseUnit" required>
+              <option value="kg">kg</option>
+              <option value="sak">sak</option>
+              <option value="ret">ret</option>
+              <option value="pcs">pcs</option>
+            </select>
+          </div>
+          <div style="flex: 1;">
+            <label for="prodStock" style="font-weight: 700; font-size: 11px; display: block; margin-bottom: 4px;">STOK AWAL</label>
+            <input class="brutal-input font-mono" id="prodStock" placeholder="0" required="" type="number"/>
+          </div>
+          <div style="flex: 1;">
+            <label for="prodMinStock" style="font-weight: 700; font-size: 11px; display: block; margin-bottom: 4px;">MIN STOK ALERT</label>
+            <input class="brutal-input font-mono" id="prodMinStock" placeholder="10" required="" type="number"/>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 12px;">
+          <div style="flex: 1;">
+            <label for="prodPurchasePrice" style="font-weight: 700; font-size: 11px; display: block; margin-bottom: 4px;">HARGA BELI BASE (HPP / Rp)</label>
+            <input class="brutal-input font-mono" id="prodPurchasePrice" placeholder="HPP per Kg/Pcs" required="" type="number"/>
+          </div>
+          <div style="flex: 1;">
+            <label style="font-weight: 700; font-size: 11px; display: block; margin-bottom: 4px;">HARGA JUAL BASE (Rp)</label>
+            <input class="brutal-input font-mono" id="prodSellingPrice" placeholder="Jual per Kg/Pcs" required="" type="number"/>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 8px;">
+          <button class="brutal-btn" id="closeAddProductModalBtn" type="button">Batal</button>
+          <button class="brutal-btn primary-btn" type="submit">Simpan Produk</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- POPUP MODAL: VOID REQUEST MODAL (Kasir Triggered) -->
+  <div class="brutal-modal-backdrop" id="voidRequestModalBackdrop">
+    <div class="brutal-modal" style="width: 440px;">
+      <h2 style="font-weight: 800; font-size: 18px; color: var(--error-text); border-bottom: var(--border-width) solid var(--border-color); padding-bottom: 8px; margin-bottom: 16px;">
+        Izin Void Diperlukan
+      </h2>
+      <p style="font-size: 13px; margin-bottom: 12px;">
+        Penghapusan item atau perubahan harga master memerlukan otorisasi dari Owner. Kirim pengajuan void secara remote?
+      </p>
+
+      <div class="bento-card" style="background-color: var(--error-bg); color: var(--error-text); margin-bottom: 16px;" id="voidRequestItemDetails">
+        <!-- Details generated dynamically -->
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <label for="voidReasonInput" style="font-weight: 700; font-size: 11px; display: block; margin-bottom: 4px;">ALASAN VOID</label>
+        <input class="brutal-input" id="voidReasonInput" placeholder="Contoh: Kasir salah input kuantitas" required="" type="text"/>
+      </div>
+
+      <div style="display: flex; gap: 12px; justify-content: flex-end;">
+        <button class="brutal-btn" id="closeVoidRequestModalBtn">Batal</button>
+        <button class="brutal-btn error-btn" id="sendVoidRequestBtn">Kirim Pengajuan Void</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUPABASE JS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    (function() {
+      const script = document.createElement('script');
+      script.src = 'src/main.js';
+      if (window.location.protocol !== 'file:') {
+        script.type = 'module';
+      }
+      document.body.appendChild(script);
+    })();
+  </script>
+</body>
+</html>
