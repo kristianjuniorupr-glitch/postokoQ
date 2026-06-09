@@ -53,7 +53,7 @@ if (!localStorage.getItem('materiq_transactions')) {
 }
 if (!localStorage.getItem('materiq_void_requests')) {
   localStorage.setItem('materiq_void_requests', JSON.stringify([]));
-}if (!localStorage.getItem('materiq_banks')) {
+} if (!localStorage.getItem('materiq_banks')) {
   const defaultBanks = [
     { id: 'b1', name: 'BCA', details: 'Rek. 1234567890 a/n TokoQ' },
     { id: 'b2', name: 'BRI', details: 'Rek. 9876543210 a/n TokoQ' },
@@ -180,7 +180,7 @@ const voidApprovalArea = document.getElementById('voidApprovalArea');
 function showToast(message, type = 'info') {
   const toast = document.createElement('div');
   toast.className = 'toast show';
-  
+
   let icon = 'info';
   if (type === 'success') {
     icon = 'check_circle';
@@ -195,27 +195,47 @@ function showToast(message, type = 'info') {
     toast.style.borderColor = 'var(--warning)';
     toast.style.color = 'var(--warning-text)';
   }
-  
+
   toast.innerHTML = `
     <span class="material-symbols-outlined">${icon}</span>
     <span>${message}</span>
   `;
-  
+
   const container = document.getElementById('toastContainer');
   container.appendChild(toast);
-  
+
   setTimeout(() => {
     toast.classList.remove('show');
     setTimeout(() => toast.remove(), 300);
   }, 4000);
 }
 
+// Helper to toggle password visibility
+function setupPasswordToggle(inputId, toggleBtnId) {
+  const input = document.getElementById(inputId);
+  const button = document.getElementById(toggleBtnId);
+  if (!input || !button) return;
+  button.addEventListener('click', () => {
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+    const icon = button.querySelector('.material-symbols-outlined');
+    if (icon) {
+      icon.textContent = isPassword ? 'visibility_off' : 'visibility';
+    }
+  });
+}
+
+// Setup Password Visibility Toggles
+setupPasswordToggle('loginPassword', 'toggleLoginPasswordBtn');
+setupPasswordToggle('settingsAdminPassword', 'toggleAdminPasswordBtn');
+setupPasswordToggle('settingsOwnerPassword', 'toggleOwnerPasswordBtn');
+
 // 3. Setup Login Event Listeners
 document.getElementById('loginForm').addEventListener('submit', (e) => {
   e.preventDefault();
   const username = document.getElementById('loginUsername').value.trim();
   const password = document.getElementById('loginPassword').value.trim();
-  
+
   const adminCreds = JSON.parse(localStorage.getItem('materiq_creds_admin')) || { username: 'admin', password: 'AdminTokoQ@2026!' };
   const ownerCreds = JSON.parse(localStorage.getItem('materiq_creds_owner')) || { username: 'owner', password: 'OwnerTokoQ@2026!' };
 
@@ -231,7 +251,7 @@ document.getElementById('logoutBtn').addEventListener('click', logout);
 
 async function loginAs(role) {
   currentUserRole = role;
-  
+
   // Try to load Vite config variables at runtime
   if (window.location.protocol !== 'file:') {
     try {
@@ -252,13 +272,13 @@ async function loginAs(role) {
   loginBackdrop.style.opacity = '0';
   loginBackdrop.style.pointerEvents = 'none';
   loginBackdrop.classList.remove('show');
-  
+
   appRoot.classList.remove('hidden');
-  
+
   userNameLabel.textContent = role === 'Admin' ? 'Kasir 1 (Admin)' : 'Owner Pemilik';
   userRoleLabel.textContent = `Role: ${role}`;
   userAvatarChar.textContent = role.charAt(0);
-  
+
   // Set default active tab
   if (role === 'Admin') {
     switchTab('Sales');
@@ -280,10 +300,10 @@ async function loginAs(role) {
 
   // Load database tables
   await Promise.all([loadProducts(), loadConversions(), loadAuditLogs()]);
-  
+
   // Initialize Realtime Sync for void authorization
   initRealtimeVoid();
-  
+
   if (role === 'Owner') {
     loadDashboardStats();
     loadVoidRequestsForOwner();
@@ -300,7 +320,7 @@ function logout() {
   cart = [];
   pendingCart = null;
   updateCartUI();
-  
+
   if (voidSubscription) {
     voidSubscription.unsubscribe();
     voidSubscription = null;
@@ -352,13 +372,13 @@ function switchTab(tab) {
   navInventory.classList.remove('active');
   navReports.classList.remove('active');
   navSettings.classList.remove('active');
-  
+
   sectionSales.classList.add('hidden');
   sectionInventory.classList.add('hidden');
   sectionReports.classList.add('hidden');
   sectionSettings.classList.add('hidden');
   globalSearchContainer.classList.add('hidden');
-  
+
   if (tab === 'Sales') {
     navSales.classList.add('active');
     sectionSales.classList.remove('hidden');
@@ -380,7 +400,7 @@ function switchTab(tab) {
     navSettings.classList.add('active');
     sectionSettings.classList.remove('hidden');
     viewTitle.textContent = 'Pengaturan Kredensial';
-    
+
     // Prefill forms
     const adminCreds = JSON.parse(localStorage.getItem('materiq_creds_admin')) || { username: 'admin', password: 'AdminTokoQ@2026!' };
     const ownerCreds = JSON.parse(localStorage.getItem('materiq_creds_owner')) || { username: 'owner', password: 'OwnerTokoQ@2026!' };
@@ -388,7 +408,7 @@ function switchTab(tab) {
     settingsAdminPassword.value = adminCreds.password;
     settingsOwnerUsername.value = ownerCreds.username;
     settingsOwnerPassword.value = ownerCreds.password;
-    
+
     // Render banks list
     renderSettingsBanks();
   }
@@ -455,9 +475,9 @@ async function loadAuditLogs() {
 // 6. UI Renderers
 function renderCatalog() {
   productGrid.innerHTML = '';
-  
+
   const query = globalSearchInput.value.toLowerCase().trim();
-  
+
   const filtered = products.filter(p => {
     if (selectedCategoryId !== 'all' && p.category !== selectedCategoryId) return false;
     if (query && !p.name.toLowerCase().includes(query) && !p.sku.toLowerCase().includes(query)) return false;
@@ -478,7 +498,7 @@ function renderCatalog() {
     const card = document.createElement('article');
     card.className = `product-card bento-card ${isCritical ? 'border-error' : ''}`;
     card.setAttribute('data-id', prod.id);
-    
+
     let icon = 'architecture';
     if (prod.category.includes('Cat') || prod.category.includes('Pelapis')) icon = 'format_paint';
     if (prod.category.includes('Alat')) icon = 'carpenter';
@@ -505,7 +525,7 @@ function renderCatalog() {
         </div>
       </div>
     `;
-    
+
     card.addEventListener('click', () => addToCart(prod.id));
     productGrid.appendChild(card);
   });
@@ -514,20 +534,20 @@ function renderCatalog() {
 function renderInventoryTable() {
   const tbody = document.getElementById('inventoryTableBody');
   tbody.innerHTML = '';
-  
+
   const onlyCritical = document.getElementById('toggleCriticalStockBtn').classList.contains('primary-btn');
   const searchInput = document.getElementById('inventorySearchInput');
   const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
-  
+
   let filtered = products;
   if (onlyCritical) {
     filtered = products.filter(p => p.stock_base <= p.min_stock_base);
   }
-  
+
   if (query) {
     filtered = filtered.filter(p => p.name.toLowerCase().includes(query) || p.sku.toLowerCase().includes(query));
   }
-  
+
   if (filtered.length === 0) {
     tbody.innerHTML = `
       <tr>
@@ -539,7 +559,7 @@ function renderInventoryTable() {
 
   filtered.forEach(p => {
     const isCritical = p.stock_base <= p.min_stock_base;
-    
+
     const tr = document.createElement('tr');
     if (isCritical) {
       tr.style.backgroundColor = 'rgba(186, 26, 26, 0.15)';
@@ -587,7 +607,7 @@ function renderAuditLogs(logs) {
     div.style.border = '1px solid var(--border-color)';
     div.style.borderRadius = 'var(--radius-sm)';
     div.style.fontSize = '12px';
-    
+
     div.innerHTML = `
       <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); margin-bottom: 2px;">
         <span>[${time}] &bull; ${log.performed_by}</span>
@@ -600,10 +620,10 @@ function renderAuditLogs(logs) {
 }
 
 // 7. Cart & Transactions Logic
-window.addToCart = function(productId) {
+window.addToCart = function (productId) {
   const prod = products.find(p => p.id === productId);
   if (!prod) return;
-  
+
   if (prod.stock_base <= 0) {
     showToast('Stok barang habis di gudang!', 'error');
     return;
@@ -630,14 +650,14 @@ window.addToCart = function(productId) {
       subtotal: prod.selling_price_base
     });
   }
-  
+
   updateCartUI();
   showToast(`${prod.name} ditambahkan`, 'success');
 };
 
 function updateCartUI() {
   cartRowsContainer.innerHTML = '';
-  
+
   if (cart.length === 0) {
     cartRowsContainer.innerHTML = `
       <div style="text-align: center; padding: 40px 16px; color: var(--text-muted);">
@@ -645,7 +665,7 @@ function updateCartUI() {
         Keranjang masih kosong.<br>Pilih produk atau ketik pencarian.
       </div>
     `;
-    
+
     cartSubtotal.textContent = 'Rp 0';
     cartTax.textContent = 'Rp 0';
     cartTotal.textContent = 'Rp 0';
@@ -714,11 +734,11 @@ function updateCartUI() {
   checkoutBtn.disabled = false;
 }
 
-window.cycleUnit = function(itemIdx) {
+window.cycleUnit = function (itemIdx) {
   const item = cart[itemIdx];
   const prod = products.find(p => p.id === item.product_id);
   const prodConvs = conversions.filter(c => c.product_id === item.product_id);
-  
+
   const unitsPool = [
     { name: prod.base_unit, multiplier: 1, price: prod.selling_price_base }
   ];
@@ -745,16 +765,16 @@ window.cycleUnit = function(itemIdx) {
   showToast(`Satuan diubah ke ${item.unit_name}`, 'info');
 };
 
-window.updateCartQty = function(itemIdx, delta) {
+window.updateCartQty = function (itemIdx, delta) {
   const item = cart[itemIdx];
   const prod = products.find(p => p.id === item.product_id);
   const newQty = item.quantity + delta;
-  
+
   if (newQty <= 0) {
     window.requestItemVoid(itemIdx);
     return;
   }
-  
+
   if (newQty * item.multiplier > prod.stock_base) {
     showToast('Stok tidak mencukupi!', 'warning');
     return;
@@ -766,9 +786,9 @@ window.updateCartQty = function(itemIdx, delta) {
 };
 
 // Void request popup
-window.requestItemVoid = function(itemIdx) {
+window.requestItemVoid = function (itemIdx) {
   const item = cart[itemIdx];
-  
+
   if (currentUserRole === 'Owner') {
     cart.splice(itemIdx, 1);
     updateCartUI();
@@ -789,7 +809,7 @@ window.requestItemVoid = function(itemIdx) {
     <p style="font-size: 12px;">Subtotal Tagihan: Rp ${item.subtotal.toLocaleString('id-ID')}</p>
     <p style="font-family: var(--font-mono); font-size: 11px; margin-top: 8px; font-weight: 800; text-align: center;">TOKEN: ${activeVoidRequest.token}</p>
   `;
-  
+
   voidReasonInput.value = '';
   voidRequestModalBackdrop.classList.add('show');
 };
@@ -836,7 +856,7 @@ document.getElementById('sendVoidRequestBtn').addEventListener('click', async ()
           match.status = 'approved';
           match.resolved_at = new Date().toISOString();
           localStorage.setItem('materiq_void_requests', JSON.stringify(currentReqs));
-          
+
           // Trigger approval workflow in UI
           if (cart.length > 0 && activeVoidRequest) {
             cart.splice(activeVoidRequest.cartIndex, 1);
@@ -858,7 +878,7 @@ document.getElementById('sendVoidRequestBtn').addEventListener('click', async ()
         }
       ]);
       if (error) throw error;
-      
+
       showToast(`Permintaan void terkirim. Menunggu persetujuan Owner...`, 'warning');
       writeAuditLog(`Void Requested`, `Admin requested void for ${activeVoidRequest.item.name}. Token: ${activeVoidRequest.token}`);
       voidRequestModalBackdrop.classList.remove('show');
@@ -872,14 +892,14 @@ document.getElementById('sendVoidRequestBtn').addEventListener('click', async ()
 // Realtime Channel listener for Void Requests
 function initRealtimeVoid() {
   if (useLocalFallback) return; // Local mode doesn't need pg subscriptions
-  
+
   if (voidSubscription) voidSubscription.unsubscribe();
 
   voidSubscription = supabase
     .channel('void_channel')
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'void_requests' }, payload => {
       const updatedReq = payload.new;
-      
+
       if (activeVoidRequest && updatedReq.token === activeVoidRequest.token) {
         if (updatedReq.status === 'approved') {
           cart.splice(activeVoidRequest.cartIndex, 1);
@@ -893,7 +913,7 @@ function initRealtimeVoid() {
           activeVoidRequest = null;
         }
       }
-      
+
       if (currentUserRole === 'Owner') {
         loadVoidRequestsForOwner();
         loadAuditLogs();
@@ -929,7 +949,7 @@ async function loadVoidRequestsForOwner() {
   }
 
   voidApprovalArea.innerHTML = '';
-  
+
   if (data.length === 0) {
     voidApprovalArea.innerHTML = `
       <div style="padding: 12px; background-color: var(--surface-low); border: var(--border-width) dashed var(--border-color); border-radius: var(--radius-md); text-align: center; color: var(--text-muted); font-size: 12px;">
@@ -966,7 +986,7 @@ async function loadVoidRequestsForOwner() {
   });
 }
 
-window.resolveVoid = async function(reqIdOrToken, status) {
+window.resolveVoid = async function (reqIdOrToken, status) {
   try {
     if (useLocalFallback) {
       const allReqs = JSON.parse(localStorage.getItem('materiq_void_requests')) || [];
@@ -1028,17 +1048,17 @@ document.getElementById('loadPendingBtn').addEventListener('click', () => {
 
 document.getElementById('emptyCartBtn').addEventListener('click', () => {
   if (cart.length === 0) return;
-  
+
   if (currentUserRole === 'Owner') {
     cart = [];
     updateCartUI();
     showToast('Keranjang dikosongkan', 'info');
     return;
   }
-  
+
   activeVoidRequest = {
     cartIndex: -1,
-    item: { name: 'KOSONGKAN KERANJANG UTAMA', quantity: cart.length, unit_name: 'item', subtotal: cart.reduce((a,b)=>a+b.subtotal,0) },
+    item: { name: 'KOSONGKAN KERANJANG UTAMA', quantity: cart.length, unit_name: 'item', subtotal: cart.reduce((a, b) => a + b.subtotal, 0) },
     token: 'VOID-' + Math.random().toString(36).substr(2, 9).toUpperCase()
   };
 
@@ -1048,7 +1068,7 @@ document.getElementById('emptyCartBtn').addEventListener('click', () => {
     <p style="font-size: 12px;">Total Nilai: Rp ${activeVoidRequest.item.subtotal.toLocaleString('id-ID')}</p>
     <p style="font-family: var(--font-mono); font-size: 11px; margin-top: 8px; font-weight: 800; text-align: center;">TOKEN: ${activeVoidRequest.token}</p>
   `;
-  
+
   voidReasonInput.value = '';
   voidRequestModalBackdrop.classList.add('show');
 });
@@ -1058,22 +1078,22 @@ checkoutBtn.addEventListener('click', openCheckoutModal);
 document.getElementById('cancelPaymentBtn').addEventListener('click', closeCheckoutModal);
 
 function openCheckoutModal() {
-  const subtotalVal = cart.reduce((a,b) => a + b.subtotal, 0);
+  const subtotalVal = cart.reduce((a, b) => a + b.subtotal, 0);
   const taxVal = Math.round(subtotalVal * 0.11);
   const discVal = Number(cartDiscountInput.value) || 0;
   const finalTotal = Math.max(0, subtotalVal + taxVal - discVal);
-  
+
   modalTotalBill.textContent = `Rp ${finalTotal.toLocaleString('id-ID')}`;
   modalTotalBill.dataset.bill = finalTotal;
-  
+
   cashReceivedInput.value = '';
   cashChangeLabel.textContent = 'Rp 0';
   debtWarningText.style.display = 'none';
   confirmPaymentBtn.disabled = true;
-  
+
   selectPaymentMethod('Cash');
   paymentModalBackdrop.classList.add('show');
-  
+
   setTimeout(() => cashReceivedInput.focus(), 150);
 }
 
@@ -1089,12 +1109,12 @@ function populateBankSelect() {
   const banks = JSON.parse(localStorage.getItem('materiq_banks')) || [];
   if (!paymentBankSelect) return;
   paymentBankSelect.innerHTML = '';
-  
+
   if (banks.length === 0) {
     paymentBankSelect.innerHTML = '<option value="">-- Tidak Ada Bank Terdaftar --</option>';
     return;
   }
-  
+
   banks.forEach(bank => {
     const opt = document.createElement('option');
     opt.value = bank.name;
@@ -1108,9 +1128,9 @@ function selectPaymentMethod(method) {
   document.getElementById('payMethodCash').className = 'brutal-btn';
   document.getElementById('payMethodQris').className = 'brutal-btn';
   document.getElementById('payMethodDebit').className = 'brutal-btn';
-  
+
   const finalBill = Number(modalTotalBill.dataset.bill);
-  
+
   if (method === 'Cash') {
     document.getElementById('payMethodCash').classList.add('primary-btn');
     cashReceivedInputGroup.style.display = 'block';
@@ -1150,10 +1170,10 @@ cashReceivedInput.addEventListener('input', validatePayment);
 
 function validatePayment() {
   if (paymentMethod !== 'Cash') return;
-  
+
   const finalBill = Number(modalTotalBill.dataset.bill);
   const paid = Number(cashReceivedInput.value) || 0;
-  
+
   if (paid < finalBill) {
     debtWarningText.style.display = 'block';
     confirmPaymentBtn.disabled = true;
@@ -1171,8 +1191,8 @@ document.getElementById('confirmPaymentBtn').addEventListener('click', async () 
   const finalBill = Number(modalTotalBill.dataset.bill);
   const paid = Number(cashReceivedInput.value);
   const change = Math.max(0, paid - finalBill);
-  const invoiceNo = 'INV-' + new Date().toISOString().slice(2,10).replace(/-/g,'') + '-' + Math.floor(1000 + Math.random() * 9000);
-  
+  const invoiceNo = 'INV-' + new Date().toISOString().slice(2, 10).replace(/-/g, '') + '-' + Math.floor(1000 + Math.random() * 9000);
+
   try {
     confirmPaymentBtn.disabled = true;
     confirmPaymentBtn.textContent = 'Menyimpan...';
@@ -1185,8 +1205,8 @@ document.getElementById('confirmPaymentBtn').addEventListener('click', async () 
         invoice_no: invoiceNo,
         admin_id: currentUserRole === 'Admin' ? 'Kasir 1' : 'Owner',
         customer_name: 'Pelanggan Umum (Walk-in)',
-        total_price: cart.reduce((a,b)=>a+b.subtotal,0),
-        tax: Math.round(cart.reduce((a,b)=>a+b.subtotal,0) * 0.11),
+        total_price: cart.reduce((a, b) => a + b.subtotal, 0),
+        tax: Math.round(cart.reduce((a, b) => a + b.subtotal, 0) * 0.11),
         discount: Number(cartDiscountInput.value) || 0,
         final_price: finalBill,
         payment_method: paymentMethod === 'Debit/Transfer' ? `Transfer (${document.getElementById('paymentBankSelect').value})` : paymentMethod,
@@ -1210,7 +1230,7 @@ document.getElementById('confirmPaymentBtn').addEventListener('click', async () 
 
       showToast(`Transaksi ${invoiceNo} berhasil (Offline Mode)`, 'success');
       writeAuditLog(`Transaction Completed`, `Completed sale ${invoiceNo} for Rp ${finalBill.toLocaleString('id-ID')}`);
-      
+
       cart = [];
       cartDiscountInput.value = '';
       updateCartUI();
@@ -1223,8 +1243,8 @@ document.getElementById('confirmPaymentBtn').addEventListener('click', async () 
           invoice_no: invoiceNo,
           admin_id: currentUserRole === 'Admin' ? 'Kasir 1' : 'Owner',
           customer_name: 'Pelanggan Umum (Walk-in)',
-          total_price: cart.reduce((a,b)=>a+b.subtotal,0),
-          tax: Math.round(cart.reduce((a,b)=>a+b.subtotal,0) * 0.11),
+          total_price: cart.reduce((a, b) => a + b.subtotal, 0),
+          tax: Math.round(cart.reduce((a, b) => a + b.subtotal, 0) * 0.11),
           discount: Number(cartDiscountInput.value) || 0,
           final_price: finalBill,
           payment_method: paymentMethod === 'Debit/Transfer' ? `Transfer (${document.getElementById('paymentBankSelect').value})` : paymentMethod,
@@ -1252,7 +1272,7 @@ document.getElementById('confirmPaymentBtn').addEventListener('click', async () 
 
         const prod = products.find(p => p.id === item.product_id);
         const newStockBase = prod.stock_base - (item.quantity * item.multiplier);
-        
+
         const { error: stockError } = await supabase.from('products')
           .update({ stock_base: newStockBase })
           .eq('id', item.product_id);
@@ -1261,7 +1281,7 @@ document.getElementById('confirmPaymentBtn').addEventListener('click', async () 
 
       showToast(`Transaksi ${invoiceNo} diselesaikan!`, 'success');
       writeAuditLog(`Transaction Completed`, `Completed sale ${invoiceNo} for Rp ${finalBill.toLocaleString('id-ID')}`);
-      
+
       cart = [];
       cartDiscountInput.value = '';
       updateCartUI();
@@ -1329,7 +1349,7 @@ if (closeEditProductModalBtn) {
 
 addProductForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  
+
   const sku = document.getElementById('prodSku').value.trim();
   const name = document.getElementById('prodName').value.trim();
   const category = document.getElementById('prodCategory').value;
@@ -1342,7 +1362,7 @@ addProductForm.addEventListener('submit', async (e) => {
   try {
     if (useLocalFallback) {
       const localProds = JSON.parse(localStorage.getItem('materiq_products')) || [];
-      
+
       if (localProds.find(p => p.sku === sku)) {
         showToast('SKU sudah terdaftar!', 'error');
         return;
@@ -1359,12 +1379,12 @@ addProductForm.addEventListener('submit', async (e) => {
 
       const localConvs = JSON.parse(localStorage.getItem('materiq_conversions')) || [];
       localConvs.push({ id: 'c-' + Math.random().toString(36).substr(2, 9), product_id: newId, unit_name: baseUnit.toUpperCase(), multiplier: 1, selling_price: selling });
-      
+
       localStorage.setItem('materiq_conversions', JSON.stringify(localConvs));
 
       showToast('Produk baru berhasil disimpan ke database lokal!', 'success');
       writeAuditLog('Product Added', `Added new product ${name} (SKU: ${sku})`);
-      
+
       addProductForm.reset();
       addProductModalBackdrop.classList.remove('show');
       await loadProducts();
@@ -1387,7 +1407,7 @@ addProductForm.addEventListener('submit', async (e) => {
 
       showToast('Produk baru berhasil disimpan ke Supabase!', 'success');
       writeAuditLog('Product Added', `Added new master product ${name} (SKU: ${sku})`);
-      
+
       addProductForm.reset();
       addProductModalBackdrop.classList.remove('show');
       await loadProducts();
@@ -1399,23 +1419,23 @@ addProductForm.addEventListener('submit', async (e) => {
   }
 });
 
-window.deleteProduct = async function(id) {
+window.deleteProduct = async function (id) {
   if (!confirm('Apakah Anda yakin ingin menghapus produk ini?')) return;
-  
+
   try {
     const prod = products.find(p => p.id === id);
     if (useLocalFallback) {
       const localProds = JSON.parse(localStorage.getItem('materiq_products')) || [];
       const updated = localProds.filter(p => p.id !== id);
       localStorage.setItem('materiq_products', JSON.stringify(updated));
-      
+
       showToast('Produk berhasil dihapus.', 'info');
       writeAuditLog('Product Deleted', `Deleted product ${prod?.name} (ID: ${id})`);
       await loadProducts();
     } else {
       const { error } = await supabase.from('products').delete().eq('id', id);
       if (error) throw error;
-      
+
       showToast('Produk berhasil dihapus.', 'info');
       writeAuditLog('Product Deleted', `Deleted master product ${prod?.name} (ID: ${id})`);
       await loadProducts();
@@ -1426,13 +1446,13 @@ window.deleteProduct = async function(id) {
   }
 };
 
-window.openEditProductModal = function(id) {
+window.openEditProductModal = function (id) {
   const prod = products.find(p => p.id === id);
   if (!prod) {
     showToast('Produk tidak ditemukan!', 'error');
     return;
   }
-  
+
   editProdId.value = prod.id;
   editProdSku.value = prod.sku;
   editProdName.value = prod.name;
@@ -1442,13 +1462,13 @@ window.openEditProductModal = function(id) {
   editProdMinStock.value = prod.min_stock_base;
   editProdPurchasePrice.value = prod.purchase_price_base;
   editProdSellingPrice.value = prod.selling_price_base;
-  
+
   editProductModalBackdrop.classList.add('show');
 };
 
 editProductForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  
+
   const id = editProdId.value;
   const sku = editProdSku.value.trim();
   const name = editProdName.value.trim();
@@ -1462,7 +1482,7 @@ editProductForm.addEventListener('submit', async (e) => {
   try {
     if (useLocalFallback) {
       const localProds = JSON.parse(localStorage.getItem('materiq_products')) || [];
-      
+
       // Check if SKU is used by another product
       const dup = localProds.find(p => p.sku === sku && p.id !== id);
       if (dup) {
@@ -1504,7 +1524,7 @@ editProductForm.addEventListener('submit', async (e) => {
 
       showToast('Perubahan produk berhasil disimpan!', 'success');
       writeAuditLog('Product Updated', `Updated product ${name} (SKU: ${sku})`);
-      
+
       editProductForm.reset();
       editProductModalBackdrop.classList.remove('show');
       await loadProducts();
@@ -1517,7 +1537,7 @@ editProductForm.addEventListener('submit', async (e) => {
         .select('id')
         .eq('sku', sku)
         .neq('id', id);
-      
+
       if (dupErr) throw dupErr;
       if (dupProds && dupProds.length > 0) {
         showToast('SKU sudah digunakan oleh produk lain!', 'error');
@@ -1570,7 +1590,7 @@ editProductForm.addEventListener('submit', async (e) => {
 
       showToast('Perubahan produk berhasil disimpan ke Supabase!', 'success');
       writeAuditLog('Product Updated', `Updated master product ${name} (SKU: ${sku})`);
-      
+
       editProductForm.reset();
       editProductModalBackdrop.classList.remove('show');
       await loadProducts();
@@ -1586,7 +1606,7 @@ editProductForm.addEventListener('submit', async (e) => {
 async function loadDashboardStats() {
   try {
     let txs = [];
-    
+
     if (useLocalFallback) {
       txs = JSON.parse(localStorage.getItem('materiq_transactions')) || [];
     } else {
@@ -1594,10 +1614,10 @@ async function loadDashboardStats() {
       if (error) throw error;
       txs = data;
     }
-    
+
     // Omzet sum
     const totalOmzet = txs.reduce((sum, tx) => sum + Number(tx.final_price), 0);
-    
+
     // For Offline/Local Mode, HPP is estimated as 80% of final_price for simplicity if transaction_items is not fully sync'd locally, 
     // or we can calculate it precisely if we want. Let's do a mock HPP calculation (80% cost) as a highly reliable fallback, 
     // or precise calculation if we use Supabase.
@@ -1634,9 +1654,9 @@ async function loadDashboardStats() {
 
 function checkRestockPlan() {
   restockPlannerContainer.innerHTML = '';
-  
+
   const lowStockProducts = products.filter(p => p.stock_base <= p.min_stock_base);
-  
+
   if (lowStockProducts.length === 0) {
     restockPlannerContainer.innerHTML = `
       <div style="text-align: center; padding: 32px; color: var(--text-muted);">
@@ -1648,7 +1668,7 @@ function checkRestockPlan() {
 
   lowStockProducts.forEach(p => {
     const recQty = Math.max(50, p.min_stock_base * 5);
-    
+
     const row = document.createElement('div');
     row.style.display = 'flex';
     row.style.justifyContent = 'space-between';
@@ -1681,10 +1701,10 @@ document.getElementById('themeToggleBtn').addEventListener('click', () => {
   const currentTheme = document.documentElement.getAttribute('data-theme');
   const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', nextTheme);
-  
+
   const icon = document.querySelector('#themeToggleBtn span');
   icon.textContent = nextTheme === 'dark' ? 'light_mode' : 'dark_mode';
-  
+
   showToast(`Beralih ke Mode ${nextTheme === 'dark' ? 'Gelap' : 'Terang'}`, 'info');
 });
 
@@ -1720,7 +1740,7 @@ function renderSettingsBanks() {
   const banks = JSON.parse(localStorage.getItem('materiq_banks')) || [];
   if (!settingsBankTableBody) return;
   settingsBankTableBody.innerHTML = '';
-  
+
   if (banks.length === 0) {
     settingsBankTableBody.innerHTML = `
       <tr>
@@ -1729,7 +1749,7 @@ function renderSettingsBanks() {
     `;
     return;
   }
-  
+
   banks.forEach(bank => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -1748,45 +1768,45 @@ if (addBankForm) {
     e.preventDefault();
     const name = bankNameInput.value.trim().toUpperCase();
     const details = bankDetailsInput.value.trim();
-    
+
     if (!name || !details) return;
-    
+
     const banks = JSON.parse(localStorage.getItem('materiq_banks')) || [];
-    
+
     if (banks.find(b => b.name === name)) {
       showToast(`Bank ${name} sudah terdaftar!`, 'error');
       return;
     }
-    
+
     const newBank = {
       id: 'b-' + Math.random().toString(36).substr(2, 9),
       name,
       details
     };
-    
+
     banks.push(newBank);
     localStorage.setItem('materiq_banks', JSON.stringify(banks));
-    
+
     showToast(`Bank ${name} berhasil ditambahkan!`, 'success');
     writeAuditLog('Bank Added', `Owner added transfer bank account ${name}`);
-    
+
     addBankForm.reset();
     renderSettingsBanks();
     populateBankSelect();
   });
 }
 
-window.deleteBank = function(id) {
+window.deleteBank = function (id) {
   if (!confirm('Apakah Anda yakin ingin menghapus bank/rekening ini?')) return;
-  
+
   const banks = JSON.parse(localStorage.getItem('materiq_banks')) || [];
   const bank = banks.find(b => b.id === id);
   const updated = banks.filter(b => b.id !== id);
   localStorage.setItem('materiq_banks', JSON.stringify(updated));
-  
+
   showToast(`Bank ${bank?.name || ''} berhasil dihapus.`, 'info');
   writeAuditLog('Bank Deleted', `Owner deleted transfer bank account ${bank?.name || ''}`);
-  
+
   renderSettingsBanks();
   populateBankSelect();
 };
