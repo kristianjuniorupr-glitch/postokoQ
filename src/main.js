@@ -17,11 +17,11 @@ const defaultConversions = [
 ];
 
 // Initialize LocalStorage if empty
-if (!localStorage.getItem('materiq_creds_admin')) {
-  localStorage.setItem('materiq_creds_admin', JSON.stringify({ username: 'admin', password: 'admin123' }));
-}
-if (!localStorage.getItem('materiq_creds_owner')) {
-  localStorage.setItem('materiq_creds_owner', JSON.stringify({ username: 'owner', password: 'owner123' }));
+// Initialize LocalStorage if empty (with forced one-time reset helper)
+if (!localStorage.getItem('materiq_creds_admin') || !localStorage.getItem('materiq_creds_reset_v4')) {
+  localStorage.setItem('materiq_creds_admin', JSON.stringify({ username: 'admin', password: 'AdminTokoQ@2026!' }));
+  localStorage.setItem('materiq_creds_owner', JSON.stringify({ username: 'owner', password: 'OwnerTokoQ@2026!' }));
+  localStorage.setItem('materiq_creds_reset_v4', 'true');
 }
 if (!localStorage.getItem('materiq_products')) {
   localStorage.setItem('materiq_products', JSON.stringify(defaultProducts));
@@ -216,8 +216,8 @@ document.getElementById('loginForm').addEventListener('submit', (e) => {
   const username = document.getElementById('loginUsername').value.trim();
   const password = document.getElementById('loginPassword').value.trim();
   
-  const adminCreds = JSON.parse(localStorage.getItem('materiq_creds_admin')) || { username: 'admin', password: 'admin123' };
-  const ownerCreds = JSON.parse(localStorage.getItem('materiq_creds_owner')) || { username: 'owner', password: 'owner123' };
+  const adminCreds = JSON.parse(localStorage.getItem('materiq_creds_admin')) || { username: 'admin', password: 'AdminTokoQ@2026!' };
+  const ownerCreds = JSON.parse(localStorage.getItem('materiq_creds_owner')) || { username: 'owner', password: 'OwnerTokoQ@2026!' };
 
   if (username === adminCreds.username && password === adminCreds.password) {
     loginAs('Admin');
@@ -382,8 +382,8 @@ function switchTab(tab) {
     viewTitle.textContent = 'Pengaturan Kredensial';
     
     // Prefill forms
-    const adminCreds = JSON.parse(localStorage.getItem('materiq_creds_admin')) || { username: 'admin', password: 'admin123' };
-    const ownerCreds = JSON.parse(localStorage.getItem('materiq_creds_owner')) || { username: 'owner', password: 'owner123' };
+    const adminCreds = JSON.parse(localStorage.getItem('materiq_creds_admin')) || { username: 'admin', password: 'AdminTokoQ@2026!' };
+    const ownerCreds = JSON.parse(localStorage.getItem('materiq_creds_owner')) || { username: 'owner', password: 'OwnerTokoQ@2026!' };
     settingsAdminUsername.value = adminCreds.username;
     settingsAdminPassword.value = adminCreds.password;
     settingsOwnerUsername.value = ownerCreds.username;
