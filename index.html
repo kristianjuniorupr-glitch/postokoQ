@@ -784,16 +784,7 @@
 
   <!-- SUPABASE JS SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    (function () {
-      const script = document.createElement('script');
-      script.src = 'src/main.js';
-      if (window.location.protocol !== 'file:') {
-        script.type = 'module';
-      }
-      document.body.appendChild(script);
-    })();
-  </script>
+  <script type="module" src="/src/main.js"></script>
 </body>
 
 </html>
