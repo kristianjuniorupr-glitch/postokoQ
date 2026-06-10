@@ -66,16 +66,38 @@ if (!localStorage.getItem('materiq_void_requests')) {
 const defaultUrl = 'https://vyqprvbimfcpkvhselkg.supabase.co';
 const defaultAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ5cXBydmJpbWZjcGt2aHNlbGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzOTU1MzAsImV4cCI6MjA5NTk3MTUzMH0.HLRHqLfQM4qML2uNXquVmmKX6S9uDz4s6O95iEh0VnE';
 
-try {
-  if (window.supabase) {
-    supabase = window.supabase.createClient(defaultUrl, defaultAnonKey);
-  } else {
-    useLocalFallback = true;
-  }
-} catch (e) {
-  console.error("Supabase client failed to initialize:", e);
-  useLocalFallback = true;
+// Dynamic Supabase script loader
+function loadSupabaseScript() {
+  return new Promise((resolve, reject) => {
+    if (window.supabase) {
+      resolve(window.supabase);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+    script.onload = () => {
+      resolve(window.supabase);
+    };
+    script.onerror = (err) => {
+      reject(err);
+    };
+    document.head.appendChild(script);
+  });
 }
+
+// Preload Supabase on first user interaction (focus, click, keydown)
+const initInteractionEvents = ['mousedown', 'keydown', 'touchstart'];
+function triggerSupabasePreload() {
+  loadSupabaseScript().catch(err => console.warn("Background Supabase preload failed:", err));
+  // Remove listeners so it only triggers once
+  initInteractionEvents.forEach(evt => {
+    window.removeEventListener(evt, triggerSupabasePreload);
+  });
+}
+initInteractionEvents.forEach(evt => {
+  window.addEventListener(evt, triggerSupabasePreload, { passive: true });
+});
+
 
 // 2. Global State Management
 let currentUserRole = null; // 'Admin' or 'Owner'
@@ -259,13 +281,35 @@ async function loginAs(role) {
       const env = module.env || {};
       const url = env.VITE_SUPABASE_URL;
       const key = env.VITE_SUPABASE_ANON_KEY;
+      
+      await loadSupabaseScript();
+      
       if (url && key && window.supabase) {
         supabase = window.supabase.createClient(url, key);
         useLocalFallback = false;
         console.log("Supabase client initialized with Vite config variables.");
+      } else if (window.supabase) {
+        supabase = window.supabase.createClient(defaultUrl, defaultAnonKey);
+        useLocalFallback = false;
+        console.log("Supabase client initialized with default fallback credentials.");
+      } else {
+        useLocalFallback = true;
       }
     } catch (e) {
-      console.log("Not running in Vite environment, using fallback Supabase client.");
+      console.log("Error during dynamic Supabase initialization, using local fallback:", e);
+      useLocalFallback = true;
+    }
+  } else {
+    try {
+      await loadSupabaseScript();
+      if (window.supabase) {
+        supabase = window.supabase.createClient(defaultUrl, defaultAnonKey);
+        useLocalFallback = false;
+      } else {
+        useLocalFallback = true;
+      }
+    } catch (e) {
+      useLocalFallback = true;
     }
   }
 
