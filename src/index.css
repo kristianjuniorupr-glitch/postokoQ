@@ -1,5 +1,5 @@
 /* Custom font family imports */
-@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
 
 :root {
   /* Design Tokens - Light Mode */
@@ -464,12 +464,6 @@ body {
   pointer-events: auto;
 }
 
-#loginBackdrop {
-  background-image: linear-gradient(rgba(11, 17, 30, 0.55), rgba(11, 17, 30, 0.55)), url('./hardware_store_bg.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
 
 .brutal-modal {
   background-color: var(--surface-lowest);
